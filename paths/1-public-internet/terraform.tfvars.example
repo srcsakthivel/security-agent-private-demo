@@ -1,0 +1,11 @@
+# Required: throwaway password for the demo RDS instance.
+db_password = "ChangeMe-demo-only-123!"
+
+# Optional overrides:
+# region         = "us-east-1"
+# name_prefix    = "continuum-pub-pentest"
+# vpc_cidr       = "10.0.0.0/16"
+# az_count       = 2
+# private_domain = "internal.pentest-demo.local"
+# app_hostname   = "app"
+# instance_type  = "t3.small"

@@ -1,0 +1,22 @@
+# Terraform
+**/*.tfstate
+**/*.tfstate.*
+**/.terraform/
+# NOTE: .terraform.lock.hcl is intentionally committed (reproducible provider versions).
+**/terraform.tfvars
+**/crash.log
+**/*.tfplan
+
+# Secrets / credentials
+**/*.pem
+**/*.key
+**/id_rsa*
+**/.env
+**/*.env
+
+# Vendored Python wheels — local build artifacts (vendor-wheels.sh output), never committed
+**/wheels/
+**/*.whl
+
+# OS
+.DS_Store

@@ -1,0 +1,35 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ManageENIs",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeDhcpOptions",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DescribeNetworkInterfaceAttribute",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeVpcs",
+        "ec2:ModifyNetworkInterfaceAttribute",
+        "ec2:DeleteNetworkInterface"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CreateENIPermissionScopedToSubnets",
+      "Effect": "Allow",
+      "Action": "ec2:CreateNetworkInterfacePermission",
+      "Resource": "arn:aws:ec2:REGION:ACCOUNT_ID:network-interface/*",
+      "Condition": {
+        "ArnEquals": {
+          "ec2:Subnet": [
+            "arn:aws:ec2:REGION:ACCOUNT_ID:subnet/PRIVATE_SUBNET_ID_A",
+            "arn:aws:ec2:REGION:ACCOUNT_ID:subnet/PRIVATE_SUBNET_ID_B"
+          ]
+        }
+      }
+    }
+  ]
+}
