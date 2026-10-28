@@ -13,8 +13,9 @@ for an air-gapped / security-conscious customer, and it has the most moving part
 - VPC with **private subnets only** — no public subnets, no IGW, no NAT. The private route
   tables have **no default route**.
 - **PrivateLink interface endpoints** (always on): `securityagent` (agent control plane)
-  + `ssm`, `ssmmessages`, `ec2messages` (Session Manager). `bedrock-runtime` and `logs`
-  endpoints are not required.
+  + `ssm`, `ssmmessages`, `ec2messages` (Session Manager). `bedrock-runtime` is not
+  required. Set `enable_cloudwatch_logs_endpoint = true` to add a `logs` endpoint if you
+  configure CloudWatch logging for the Agent Space.
 - An **S3 gateway endpoint** so the app EC2 can dnf-install from the regional-S3 AL2023
   repos and pull the vendored wheels.
 - The shared [`modules/pentest-target`](../../modules/pentest-target/) target with
@@ -52,8 +53,8 @@ your laptop — macOS/arm64 wheels wouldn't install on AL2023. Terraform uploads
    dnf hangs. User-data sets `ip_resolve=4` in `/etc/dnf/dnf.conf` *before* the first dnf
    call to force IPv4. (Already handled in the module's `user_data.sh.tftpl`.)
 2. **Only the control-plane endpoint is needed for the agent.** Pen test runs completed
-   with full coverage without `bedrock-runtime` or `logs` endpoints, so `endpoints.tf`
-   creates only `securityagent` for the agent.
+   with full coverage without a `bedrock-runtime` endpoint, so `endpoints.tf` creates
+   `securityagent` for the agent, plus `logs` only when `enable_cloudwatch_logs_endpoint = true`.
 
 ## Verify the domain (Private VPC)
 

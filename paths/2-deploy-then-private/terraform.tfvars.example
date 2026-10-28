@@ -16,3 +16,7 @@ go_private = false
 # private_domain = "internal.pentest-demo.local"
 # app_hostname   = "app"
 # instance_type  = "t3.small"
+
+
+# Optional: set to true if you configure CloudWatch logging for the Agent Space.
+# enable_cloudwatch_logs_endpoint = true

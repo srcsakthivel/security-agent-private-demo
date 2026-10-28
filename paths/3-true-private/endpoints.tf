@@ -3,8 +3,8 @@
 #
 # With no NAT/IGW, the Security Agent ENI reaches AWS only over PrivateLink:
 #   - securityagent (control plane)
-# bedrock-runtime and logs endpoints are not required: pen test runs completed
-# with full coverage without them.
+# bedrock-runtime is not required: pen test runs completed with full coverage
+# without it. A logs endpoint is optional (enable_cloudwatch_logs_endpoint).
 #
 # SSM endpoints (ssm/ssmmessages/ec2messages) keep Session Manager working with
 # no internet. The S3 gateway endpoint lets the app EC2 (a) dnf-install from the
@@ -12,12 +12,13 @@
 ###############################################################################
 
 locals {
-  # bedrock-runtime and logs endpoints are NOT needed: test runs completed with
-  # full coverage without them (model inference and run logging are handled
-  # on the service side). Only the control-plane endpoint is kept.
-  continuum_services = {
-    securityagent = "com.amazonaws.${var.region}.securityagent"
-  }
+  # bedrock-runtime is NOT needed: test runs completed with full coverage without
+  # it. The logs endpoint is optional: turn it on (enable_cloudwatch_logs_endpoint)
+  # if you configure CloudWatch logging when you enable penetration testing.
+  continuum_services = merge(
+    { securityagent = "com.amazonaws.${var.region}.securityagent" },
+    var.enable_cloudwatch_logs_endpoint ? { logs = "com.amazonaws.${var.region}.logs" } : {}
+  )
 
   ssm_services = {
     ssm         = "com.amazonaws.${var.region}.ssm"

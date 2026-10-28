@@ -50,3 +50,16 @@ variable "instance_type" {
   type        = string
   default     = "t3.small"
 }
+
+###############################################################################
+# OPTIONAL CLOUDWATCH LOGS ENDPOINT
+###############################################################################
+variable "enable_cloudwatch_logs_endpoint" {
+  description = <<-EOT
+    Create a com.amazonaws.<region>.logs interface endpoint.
+    Not required for a penetration test run. Set to true if you configure
+    CloudWatch logging for the Agent Space when you enable penetration testing.
+  EOT
+  type        = bool
+  default     = false
+}

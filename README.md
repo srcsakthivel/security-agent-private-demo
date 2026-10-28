@@ -46,8 +46,8 @@ the agent's own egress differently:
 
 - **Path 1 & 2 (before go-private):** agent egresses 443 → **NAT Gateway** → internet.
 - **Path 2 (after go-private) & Path 3:** agent egresses 443 → a **PrivateLink
-  `securityagent` interface endpoint** inside the VPC. `bedrock-runtime` and `logs`
-  endpoints are not required — test runs completed with full coverage without them.
+  `securityagent` interface endpoint** inside the VPC. `bedrock-runtime` is not
+  required; a `logs` endpoint is optional, for when you configure CloudWatch logging.
 
 ---
 
