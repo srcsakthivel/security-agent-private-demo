@@ -1,8 +1,8 @@
 # Path 3 · True private from the start (Complex)
 
 Proves **zero internet egress from the very first second**. There is no Internet Gateway
-and no NAT Gateway at any point. The agent reaches its control plane / Bedrock / CloudWatch
-only over PrivateLink interface endpoints, and the app installs its Python deps from
+and no NAT Gateway at any point. The agent reaches its control plane
+only over a PrivateLink interface endpoint, and the app installs its Python deps from
 **wheels you vendor into S3** — because PyPI is unreachable. This is the strongest story
 for an air-gapped / security-conscious customer, and it has the most moving parts.
 
@@ -12,9 +12,9 @@ for an air-gapped / security-conscious customer, and it has the most moving part
 
 - VPC with **private subnets only** — no public subnets, no IGW, no NAT. The private route
   tables have **no default route**.
-- **PrivateLink interface endpoints** (always on): `securityagent`, `bedrock-runtime`,
-  `logs` (the agent's three required services) + `ssm`, `ssmmessages`, `ec2messages`
-  (Session Manager).
+- **PrivateLink interface endpoints** (always on): `securityagent` (agent control plane)
+  + `ssm`, `ssmmessages`, `ec2messages` (Session Manager). `bedrock-runtime` and `logs`
+  endpoints are not required.
 - An **S3 gateway endpoint** so the app EC2 can dnf-install from the regional-S3 AL2023
   repos and pull the vendored wheels.
 - The shared [`modules/pentest-target`](../../modules/pentest-target/) target with
@@ -51,9 +51,9 @@ your laptop — macOS/arm64 wheels wouldn't install on AL2023. Terraform uploads
    hostname to IPv6-only, which the gateway endpoint's IPv4 prefix list can't route, so
    dnf hangs. User-data sets `ip_resolve=4` in `/etc/dnf/dnf.conf` *before* the first dnf
    call to force IPv4. (Already handled in the module's `user_data.sh.tftpl`.)
-2. **All three Continuum endpoints or nothing.** A control-plane-only endpoint lets the
-   agent authenticate but stall at reasoning/logging. `endpoints.tf` always creates all
-   three (`securityagent`, `bedrock-runtime`, `logs`).
+2. **Only the control-plane endpoint is needed for the agent.** Pen test runs completed
+   with full coverage without `bedrock-runtime` or `logs` endpoints, so `endpoints.tf`
+   creates only `securityagent` for the agent.
 
 ## Verify the domain (Private VPC)
 
@@ -84,12 +84,6 @@ curl "http://localhost:5000/profile?id=2"
 ```
 
 Session Manager works with no internet thanks to the SSM interface endpoints.
-
-## Note on cross-region Bedrock
-
-If your Agent Space uses **cross-region inference**, Bedrock may route to sibling regions.
-Add `bedrock-runtime` interface endpoints in those region(s) too, or the agent will stall
-at inference. A single-region POC needs only the endpoints created here.
 
 ## Teardown
 

@@ -1,13 +1,10 @@
 ###############################################################################
 # PATH 3 — VPC ENDPOINTS (always on; the agent's ONLY path to AWS services)
 #
-# With no NAT/IGW, the Security Agent ENI reaches its three required services
-# exclusively over PrivateLink:
-#   - securityagent   (control plane)
-#   - bedrock-runtime (model inference)
-#   - logs            (CloudWatch Logs)
-# It is all-or-nothing: a control-plane-only endpoint makes the agent
-# authenticate but then stall at reasoning/logging.
+# With no NAT/IGW, the Security Agent ENI reaches AWS only over PrivateLink:
+#   - securityagent (control plane)
+# bedrock-runtime and logs endpoints are not required: pen test runs completed
+# with full coverage without them.
 #
 # SSM endpoints (ssm/ssmmessages/ec2messages) keep Session Manager working with
 # no internet. The S3 gateway endpoint lets the app EC2 (a) dnf-install from the
@@ -15,10 +12,11 @@
 ###############################################################################
 
 locals {
+  # bedrock-runtime and logs endpoints are NOT needed: test runs completed with
+  # full coverage without them (model inference and run logging are handled
+  # on the service side). Only the control-plane endpoint is kept.
   continuum_services = {
-    securityagent   = "com.amazonaws.${var.region}.securityagent"
-    bedrock_runtime = "com.amazonaws.${var.region}.bedrock-runtime"
-    logs            = "com.amazonaws.${var.region}.logs"
+    securityagent = "com.amazonaws.${var.region}.securityagent"
   }
 
   ssm_services = {
@@ -94,6 +92,3 @@ resource "aws_vpc_endpoint" "s3" {
   tags = { Name = "${var.name_prefix}-s3-gateway-vpce" }
 }
 
-# NOTE: Bedrock cross-region inference may route to sibling regions. If your
-# Agent Space uses cross-region inference, add bedrock-runtime endpoints in the
-# inference region(s) too. For a single-region POC this set is sufficient.

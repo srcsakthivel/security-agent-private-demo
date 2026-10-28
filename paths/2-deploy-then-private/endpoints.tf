@@ -1,19 +1,20 @@
 ###############################################################################
 # PATH 2 — VPC ENDPOINTS (created on the SECOND apply, go_private = true)
 #
-# Once the NAT is gone the agent ENI can no longer reach its control plane,
-# Bedrock, or CloudWatch over the internet. These interface endpoints carry that
-# traffic inside the VPC. SSM endpoints keep Session Manager working, and an S3
+# Once the NAT is gone the agent ENI can no longer reach its control plane over
+# the internet. The securityagent interface endpoint carries that traffic inside
+# the VPC (bedrock-runtime and logs endpoints are not required). SSM endpoints keep Session Manager working, and an S3
 # gateway endpoint keeps the private posture self-contained.
 #
 # All gated on var.go_private, so they do not exist on the first (NAT) apply.
 ###############################################################################
 
 locals {
+  # bedrock-runtime and logs endpoints are NOT needed: test runs completed with
+  # full coverage without them (model inference and run logging are handled
+  # on the service side). Only the control-plane endpoint is kept.
   continuum_services = {
-    securityagent   = "com.amazonaws.${var.region}.securityagent"
-    bedrock_runtime = "com.amazonaws.${var.region}.bedrock-runtime"
-    logs            = "com.amazonaws.${var.region}.logs"
+    securityagent = "com.amazonaws.${var.region}.securityagent"
   }
 
   ssm_services = {
