@@ -21,8 +21,8 @@ straight from PyPI. **One `terraform apply`, no prerequisites.**
 ### Why there's still a NAT
 
 The agent ENI lands in the **private** subnets and has no public IP, so it can't use the
-IGW directly. It egresses 443 → NAT → internet to reach its control plane, Bedrock, and
-CloudWatch. The "simple" in this path is the **verification story**, not the dollar cost.
+IGW directly. It only needs a route to the internal ALB; the NAT is there so the app instance can
+install its dependencies from PyPI. The "simple" in this path is the **verification story**, not the dollar cost.
 
 ## Deploy
 

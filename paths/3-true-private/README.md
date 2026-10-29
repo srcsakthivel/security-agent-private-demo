@@ -1,8 +1,7 @@
 # Path 3 · True private from the start (Complex)
 
 Proves **zero internet egress from the very first second**. There is no Internet Gateway
-and no NAT Gateway at any point. The agent reaches its control plane
-only over a PrivateLink interface endpoint, and the app installs its Python deps from
+and no NAT Gateway at any point. The agent needs only a route to the target, and the app installs its Python deps from
 **wheels you vendor into S3** — because PyPI is unreachable. This is the strongest story
 for an air-gapped / security-conscious customer, and it has the most moving parts.
 
@@ -12,10 +11,9 @@ for an air-gapped / security-conscious customer, and it has the most moving part
 
 - VPC with **private subnets only** — no public subnets, no IGW, no NAT. The private route
   tables have **no default route**.
-- **PrivateLink interface endpoints** (always on): `securityagent` (agent control plane)
-  + `ssm`, `ssmmessages`, `ec2messages` (Session Manager). `bedrock-runtime` is not
-  required. Set `enable_cloudwatch_logs_endpoint = true` to add a `logs` endpoint if you
-  configure CloudWatch logging for the Agent Space.
+- **PrivateLink interface endpoints** (always on): `ssm`, `ssmmessages`, `ec2messages`
+  (Session Manager). The agent needs no endpoints; set `enable_cloudwatch_logs_endpoint = true`
+  to add a `logs` endpoint if you configure CloudWatch logging for the Agent Space.
 - An **S3 gateway endpoint** so the app EC2 can dnf-install from the regional-S3 AL2023
   repos and pull the vendored wheels.
 - The shared [`modules/pentest-target`](../../modules/pentest-target/) target with
@@ -52,9 +50,9 @@ your laptop — macOS/arm64 wheels wouldn't install on AL2023. Terraform uploads
    hostname to IPv6-only, which the gateway endpoint's IPv4 prefix list can't route, so
    dnf hangs. User-data sets `ip_resolve=4` in `/etc/dnf/dnf.conf` *before* the first dnf
    call to force IPv4. (Already handled in the module's `user_data.sh.tftpl`.)
-2. **Only the control-plane endpoint is needed for the agent.** Pen test runs completed
-   with full coverage without a `bedrock-runtime` endpoint, so `endpoints.tf` creates
-   `securityagent` for the agent, plus `logs` only when `enable_cloudwatch_logs_endpoint = true`.
+2. **The agent needs no VPC endpoints.** Pen test runs completed with full coverage with no
+   `securityagent`, `bedrock-runtime` or `logs` endpoint, so `endpoints.tf` creates none for
+   the agent, except `logs` when `enable_cloudwatch_logs_endpoint = true`.
 
 ## Verify the domain (Private VPC)
 

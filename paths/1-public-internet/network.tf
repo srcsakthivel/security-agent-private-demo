@@ -4,10 +4,8 @@
 # The simplest posture. Full internet egress stays in place for the whole test:
 #   - Public subnets host the NAT Gateway(s) and the IGW route.
 #   - Private subnets host the target (internal ALB, EC2, RDS) and the agent ENI.
-#   - The agent ENI has no public IP, so it egresses to its control plane /
-#     Bedrock / CloudWatch via the NAT Gateway. (This is why NAT exists even in
-#     the "public" path — the target being reachable does not remove the agent's
-#     own outbound need.)
+#   - The NAT Gateway gives the app instance internet access (PyPI installs).
+#     The agent ENI only needs its local route to the internal ALB.
 ###############################################################################
 
 data "aws_availability_zones" "available" {

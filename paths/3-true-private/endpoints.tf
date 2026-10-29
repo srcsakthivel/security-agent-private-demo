@@ -1,10 +1,10 @@
 ###############################################################################
-# PATH 3 — VPC ENDPOINTS (always on; the agent's ONLY path to AWS services)
+# PATH 3 — VPC ENDPOINTS (always on)
 #
-# With no NAT/IGW, the Security Agent ENI reaches AWS only over PrivateLink:
-#   - securityagent (control plane)
-# bedrock-runtime is not required: pen test runs completed with full coverage
-# without it. A logs endpoint is optional (enable_cloudwatch_logs_endpoint).
+# With no NAT/IGW, the Security Agent ENI needs only its local route to the
+# target: pen test runs completed with full coverage with no securityagent,
+# bedrock-runtime or logs endpoint. A logs endpoint is optional
+# (enable_cloudwatch_logs_endpoint).
 #
 # SSM endpoints (ssm/ssmmessages/ec2messages) keep Session Manager working with
 # no internet. The S3 gateway endpoint lets the app EC2 (a) dnf-install from the
@@ -12,13 +12,13 @@
 ###############################################################################
 
 locals {
-  # bedrock-runtime is NOT needed: test runs completed with full coverage without
-  # it. The logs endpoint is optional: turn it on (enable_cloudwatch_logs_endpoint)
-  # if you configure CloudWatch logging when you enable penetration testing.
-  continuum_services = merge(
-    { securityagent = "com.amazonaws.${var.region}.securityagent" },
-    var.enable_cloudwatch_logs_endpoint ? { logs = "com.amazonaws.${var.region}.logs" } : {}
-  )
+  # The agent ENI needs no VPC endpoints: pen test runs completed with full
+  # coverage with no securityagent, bedrock-runtime or logs endpoint. The logs
+  # endpoint is optional: turn it on (enable_cloudwatch_logs_endpoint) if you
+  # configure CloudWatch logging when you enable penetration testing.
+  agent_services = var.enable_cloudwatch_logs_endpoint ? {
+    logs = "com.amazonaws.${var.region}.logs"
+  } : {}
 
   ssm_services = {
     ssm         = "com.amazonaws.${var.region}.ssm"
@@ -26,7 +26,7 @@ locals {
     ec2messages = "com.amazonaws.${var.region}.ec2messages"
   }
 
-  vpce_services = merge(local.continuum_services, local.ssm_services)
+  vpce_services = merge(local.agent_services, local.ssm_services)
 }
 
 resource "aws_security_group" "vpce" {
@@ -34,12 +34,16 @@ resource "aws_security_group" "vpce" {
   description = "Allow HTTPS from the agent + app ENIs to interface endpoints"
   vpc_id      = aws_vpc.main.id
 
-  ingress {
-    description     = "HTTPS from agent SG (Continuum services)"
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [module.pentest_target.agent_security_group_id]
+  # Agent -> endpoints only when the optional logs endpoint exists.
+  dynamic "ingress" {
+    for_each = var.enable_cloudwatch_logs_endpoint ? [1] : []
+    content {
+      description     = "HTTPS from agent SG (optional CloudWatch Logs endpoint)"
+      from_port       = 443
+      to_port         = 443
+      protocol        = "tcp"
+      security_groups = [module.pentest_target.agent_security_group_id]
+    }
   }
 
   ingress {
@@ -61,9 +65,11 @@ resource "aws_security_group" "vpce" {
   tags = { Name = "${var.name_prefix}-vpce-sg" }
 }
 
-# Authorize the agent ENI to reach the endpoint SG on 443. (The module does NOT
-# create an internet-egress rule here: agent_internet_egress = false.)
+# Agent ENI -> endpoint SG on 443, only when the optional logs endpoint is
+# enabled. (The module does NOT create an internet-egress rule here.)
 resource "aws_vpc_security_group_egress_rule" "agent_to_vpce" {
+  count = var.enable_cloudwatch_logs_endpoint ? 1 : 0
+
   security_group_id            = module.pentest_target.agent_security_group_id
   description                  = "Agent ENI to interface endpoints (443)"
   from_port                    = 443

@@ -34,10 +34,11 @@ terraform apply -var=go_private=true   # APPLY #2 — NAT/IGW gone, endpoints in
 ### Apply #2 — `go_private = true`
 - **IGW, NAT, EIPs, public subnets, public route table are destroyed.**
 - The private route tables lose their `0.0.0.0/0` → NAT route.
-- A **PrivateLink `securityagent` interface endpoint** + the **SSM** trio + an **S3
-  gateway** endpoint are created. (`bedrock-runtime` is not needed. Set `enable_cloudwatch_logs_endpoint = true` to add a
-  `logs` endpoint if you configure CloudWatch logging for the Agent Space.)
-- The agent SG's internet-egress rule is replaced by a 443 rule to the endpoint SG.
+- The **SSM** interface endpoint trio + an **S3 gateway** endpoint are created. The agent
+  needs no endpoints; set `enable_cloudwatch_logs_endpoint = true` to add a `logs` endpoint
+  if you configure CloudWatch logging for the Agent Space.
+- The agent SG's internet-egress rule is removed (a 443 rule to the endpoint SG is added
+  only with the optional `logs` endpoint).
 - The app EC2 is **not** replaced (it was already provisioned on apply #1), so there are
   **no wheels to vendor on this path** — that's the whole reason it's simpler than Path 3.
 - Re-verify the target with **Private VPC** verification.

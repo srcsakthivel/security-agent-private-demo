@@ -64,8 +64,7 @@ variable "go_private" {
         app is healthy here.
 
       true  (SECOND apply): the NAT default route is removed from the private
-        route tables and a PrivateLink securityagent interface endpoint
-        + SSM endpoints + an S3 gateway endpoint are
+        route tables and SSM endpoints + an S3 gateway endpoint are
         created, so the agent and Session Manager keep working with NO internet.
         The IGW/NAT/public subnets are destroyed. Re-verify the target with
         Private VPC verification.

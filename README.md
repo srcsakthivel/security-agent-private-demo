@@ -28,8 +28,8 @@ around it (internet egress, VPC endpoints, how Python deps are installed) change
   NAT, confirm the app, then re-apply with `go_private = true` to tear out the internet
   and swap in VPC endpoints.
 - **Need to prove zero internet egress from the very first second** (security-conscious
-  customer, air-gapped posture)? → **Path 3.** No IGW/NAT ever; the agent reaches its
-  control plane only over a PrivateLink interface endpoint, and the app installs
+  customer, air-gapped posture)? → **Path 3.** No IGW/NAT ever; the agent needs only a
+  route to the target, and the app installs
   Python deps from wheels you vendor into S3. The most moving parts, but the strongest story.
 
 Each path is a **self-contained Terraform root module** with its own README, variables,
@@ -37,17 +37,19 @@ and state. They all call the shared module in [`modules/pentest-target/`](module
 
 ---
 
-## The one fact that surprises everyone
+## What the agent's ENI actually needs
 
-**The agent needs outbound to AWS even when the target is private.** The Security Agent
-injects an ENI into your private subnets to reach the target over local VPC routing — but
-that ENI also has to reach the Security Agent **control plane**. It has no public IP, so it can't use an Internet Gateway directly. Each path solves
-the agent's own egress differently:
+The Security Agent injects an ENI into your private subnets and reaches the target over
+local VPC routing. In testing, that ENI needed **only a route to the target**: pen test runs
+completed with full coverage with no NAT and no `securityagent`, `bedrock-runtime` or `logs`
+endpoints. (The official docs still recommend a NAT gateway in these subnets, so treat this
+as observed behaviour.)
 
-- **Path 1 & 2 (before go-private):** agent egresses 443 → **NAT Gateway** → internet.
-- **Path 2 (after go-private) & Path 3:** agent egresses 443 → a **PrivateLink
-  `securityagent` interface endpoint** inside the VPC. `bedrock-runtime` is not
-  required; a `logs` endpoint is optional, for when you configure CloudWatch logging.
+- **Path 1 & 2 (before go-private):** a NAT is present, so the agent can also egress 443 to
+  the internet.
+- **Path 2 (after go-private) & Path 3:** no internet and no agent endpoints. Add a `logs`
+  endpoint (`enable_cloudwatch_logs_endpoint = true`) only if you configure CloudWatch
+  logging for the Agent Space.
 
 ---
 
